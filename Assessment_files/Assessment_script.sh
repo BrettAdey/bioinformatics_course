@@ -11,30 +11,30 @@ mkdir ~/assessment/results/fastqc_trimmed_reads
 mkdir ~/assessment/results/fastqc_untrimmed_reads
 mkdir ~/assessment/data/aligned_data
 
-#2.1.1 Download dependencies
-#conda install trimmomatic
-#conda install fastqc
-#conda install bwa
-#conda install samtools
-#conda install freebayes
-#conda install picard
-#conda install bedtools
-#conda install vcflib
+#2.1.1 Download dependencies (assumes anaconda/miniconda is already installed)
+conda install trimmomatic
+conda install fastqc
+conda install bwa
+conda install samtools
+conda install freebayes
+conda install picard
+conda install bedtools
+conda install vcflib
 
-#It is assumed that annovar and requisite databases are already installed in ~/assessment/annovar/
-#cd ./annovar
-#./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar knownGene humandb/
-#./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar refGene humandb/
-#./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar ensGene humandb/
-#./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar clinvar_20180603 humandb/
-#./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar exac03 humandb/
-#./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar dbnsfp31a_interpro humandb/
-#./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar avsnp150 humandb/     #This one is particularly important, as a later step will filter by dbSNP
+#It is assumed that annovar is already installed in ~/assessment/annovar/
+cd ./annovar
+./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar knownGene humandb/
+./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar refGene humandb/
+./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar ensGene humandb/
+./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar clinvar_20180603 humandb/
+./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar exac03 humandb/
+./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar dbnsfp31a_interpro humandb/
+./annotate_variation.pl -buildver hg19 -downdb -webfrom annovar avsnp150 humandb/     #This one is particularly important, as a later step will be to filter by dbSNP
 
-#It is also assumed that snpEff is installed and ready to use
-#cd ~
-#wget https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip
-#unzip snpEff_latest_core.zip
+#Download and unzip snpEff
+cd ~
+wget https://snpeff.blob.core.windows.net/versions/snpEff_latest_core.zip
+unzip snpEff_latest_core.zip
 
 #2.1.2 Download files in to 'data' directory (not neccessary for this script - pipeline assumes user inputs the correct data and path when running the bash script)
 #cd ./data
@@ -45,9 +45,9 @@ mkdir ~/assessment/data/aligned_data
 #mv ~/assessment/data/NGS0001.R2.fastq.qz ~/assessment/data/NGS0002.R1.fastq.gz
 
 #download and move reference genome data to reference directory
-#cd ./assessment #Added in case other cd's are unhashed in the future
-#wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz
-#mv hg19.fa.gz ~/assessment/data/reference
+cd ./assessment
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz
+mv hg19.fa.gz ~/assessment/data/reference
 
 #2.2.1 Quality assessment and read trimming
 fastqc -t 4 $1 $2
@@ -68,6 +68,7 @@ fastqc -t 4 ~/assessment/data/trimmed_fastq/trimmed_data_1P \
 
 mv ~/assessment/data/trimmed_fastq/*fastqc* ~/assessment/results/fastqc_trimmed_reads/
 
+#2.3
 #Make Genome Index
 bwa index ~/assessment/data/reference/hg19.fa.gz
 
@@ -92,6 +93,8 @@ cd ~/assessment/data/aligned_data
 
  #Duplicate Marking
  picard MarkDuplicates I=NGS0001_sorted.bam O=NGS0001_sorted_marked.bam M=marked_dup_metrics.txt
+
+ #Index sorted and marked bam file
  samtools index NGS0001_sorted_marked.bam
 
  #Filter BAM based on mapping quality and bitwise flags w/ samtools
@@ -111,7 +114,7 @@ bedtools coverage \
 -a NGS0001_sorted_filtered.bam \
 -b ~/assessment/data/annotation.bed  > coverage.txt
 
-#Freebayes variant calling
+#2.4 Freebayes variant calling
 zcat ~/assessment/data/reference/hg19.fa.gz > ~/assessment/data/reference/hg19.fa
 samtools faidx ~/assessment/data/reference/hg19.fa
 freebayes \
@@ -122,8 +125,7 @@ freebayes \
 
 #Compress and index VCF
 bgzip ~/assessment/results/NGS0001.vcf
-tabix \
--p vcf ~/assessment/results/NGS0001.vcf.gz
+tabix -p vcf ~/assessment/results/NGS0001.vcf.gz
 
 #Filter VCF
 vcffilter \
@@ -139,6 +141,7 @@ bedtools intersect \
 bgzip ~/assessment/results/NGS0001_filtered_anno.vcf
 tabix -p vcf ~/assessment/results/NGS0001_filtered_anno.vcf.gz
 
+#2.5
 #VCF - to - annovar input
 ~/assessment/annovar/convert2annovar.pl \
 -format vcf4 ~/assessment/results/NGS0001_filtered_anno.vcf.gz > \
@@ -151,7 +154,7 @@ tabix -p vcf ~/assessment/results/NGS0001_filtered_anno.vcf.gz
 -out ~/assessment/results/NGS0001_filtered_anno \
 -remove \
 -protocol refGene,ensGene,clinvar_20180603,exac03,dbnsfp31a_interpro,avsnp150  \
--operation g,g,f,f,f \
+-operation g,g,f,f,f,f \
 -otherinfo \
 -nastring . \
 -csvout
