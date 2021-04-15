@@ -1,0 +1,133 @@
+---
+title: "Advanced Bioinformatics 2021 Assessment"
+author: '2007092'
+date: "10/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Add packages}
+#install.packages('ggplot2')
+
+library(ggplot2)
+```
+
+
+
+```{r 3.1 Sum numbers}
+sumnums <- sum(5:55)
+print(sumnums)
+```
+
+```{r 3.2 Function to inclusively count numbers between 5 and input parameter}
+
+sumfun <- function (n) {
+  sum(5:n)
+}
+
+print(sumfun(10))
+print(sumfun(20))
+print(sumfun(100))
+```
+
+```{r 3.3 Fibonacci}
+#Create empty object 12 digits long
+fib <- numeric(12)
+
+#add first two entries manually
+fib[1] <- 1
+fib[2] <- 1
+
+#Loop to add entries 3:n (n=12)
+for (i in 3:12) {
+  fib[i] <- sum(fib[i-1], fib[i-2])
+}
+
+#Print Fibonacci object
+print(fib)
+
+```
+```{r 3.4 ggplot boxplots}
+#attach(mtcars)
+
+#boxplot(mpg~gear,data=mtcars, col=rgb(0.3,0.5,0.2,0.6),
+#        ylab ="ylab", xlab="xlab", main="title",  names = c("name1","n2","n3"))
+
+#With ggplot
+box <- ggplot(mtcars, aes(x=as.character(gear), y=mpg, fill=gear)) +
+    geom_boxplot()
+box + labs(title='Boxplots of mpg for each number of gears', x = 'Number of Gears', y = 'Miles per Gallon')
+```
+
+```{r 3.5 linear model}
+#attach(cars)
+#Get info on dataset
+?cars
+
+#Make linear model and show summary
+model <- lm(dist~speed, cars)
+summary(model)
+
+#Generate output to answer the question
+outputs <- round(summary(model)$coefficients[,1:2], 2)
+print(outputs)
+```
+
+**Linear Model**
+
+Slope: 3.93
+
+Intercept: -17.58
+
+**Standard Errors**
+
+Intercept SE: 6.76
+
+dist SE: 0.42
+
+**Units**
+
+Speed: mph
+
+Stopping distance: feet
+
+```{r 3.6 ggplot of lm}
+
+linplot <- ggplot(data=model, aes(x=speed, y=dist)) +
+  geom_point() +
+  geom_smooth(method=lm, col='blue')
+linplot + labs(title="Plot of Speed against Stopping Distance", x = 'Speed (mph)', y = 'Distance (feet)')
+```
+
+```{r 3.7 estimate of average reaction time}
+
+#The logic:
+#Stopping distance = thinking distance + braking distance
+#Braking distance = k (constant) * speed^2
+#Therefore: Stopping distance = thinking distance + k * speed^2
+#Thinking distance = speed * reaction time
+#Therefore: Stopping distance = speed * reaction time + k * speed^2
+#Rearrange in the form Y=mX+C: Stopping distance / speed =  k * speed + reaction time
+#Plotting Stopping distance / speed against speed gives reaction time as the intercept.
+
+#Convert in to sensible units
+speed_mps <- cars$speed*0.44704  #mph to m/s
+dist_m <- cars$dist*0.3048 #feet to meters
+
+#Generate model
+thinking <- lm(dist_m/speed_mps~speed_mps)
+summary(thinking)
+#intercept = 0.86 = average reaction time of 0.86s, which is a reasonable figure.
+
+#Plot the model
+thinkplot <- ggplot(data=thinking, aes(x=speed_mps, y=dist_m/speed_mps)) +
+  geom_point() +
+  geom_smooth(method=lm, col='blue')
+thinkplot + labs(title="Plot of Speed against Stopping Distance/Speed" , x = 'Speed (m/s)', y = 'Distance/Speed (Seconds)')
+
+```
+
