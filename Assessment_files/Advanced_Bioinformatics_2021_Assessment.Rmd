@@ -1,0 +1,123 @@
+---
+title: "Advanced Bioinformatics 2021 Assessment"
+author: '1890093'
+date: "10/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Add packages}
+#install.packages('ggplot2')
+
+library(ggplot2)
+```
+
+
+
+```{r 3.1 Sum numbers}
+sumnums <- sum(5:55)
+print(sumnums)
+```
+
+```{r 3.2 Function to inclusively count numbers between 5 and input parameter}
+
+sumfun <- function (n) {
+  sum(5:n)
+}
+
+print(sumfun(10))
+print(sumfun(20))
+print(sumfun(100))
+```
+
+```{r 3.3 Fibonacci}
+#Create empty object 12 digits long
+fib <- numeric(12)
+
+#add first two entries manually
+fib[1] <- 1
+fib[2] <- 1
+
+#Loop to add entries 3:n (n=12)
+for (i in 3:12) {
+  fib[i] <- sum(fib[i-1], fib[i-2])
+}
+
+#Print Fibonacci object
+print(fib)
+
+```
+```{r 3.4 ggplot boxplots}
+#attach(mtcars)
+
+#boxplot(mpg~gear,data=mtcars, col=rgb(0.3,0.5,0.2,0.6),
+#        ylab ="ylab", xlab="xlab", main="title",  names = c("name1","n2","n3"))
+
+#With ggplot
+box <- ggplot(mtcars, aes(x=as.character(gear), y=mpg, fill=gear)) +
+    geom_boxplot()
+box + labs(title='Boxplots of mpg for each number of gears', x = 'Number of Gears', y = 'Miles per Gallon')
+```
+
+```{r 3.5 linear model}
+#attach(cars)
+#Get info on dataset
+?cars
+
+#Make linear model and show summary
+model <- lm(dist~speed, cars)
+summary(model)
+
+#Generate output to answer the question
+outputs <- round(summary(model)$coefficients[,1:2], 2)
+print(outputs)
+```
+
+#Linear Model
+Slope: 3.93
+Intercept: -17.58
+
+#Standard Errors
+Intercept SE: 6.76
+dist SE: 0.42
+
+#Units:
+Speed: mph
+Stopping distance: feet
+
+```{r 3.6 ggplot of lm}
+
+linplot <- ggplot(data=model, aes(x=speed, y=dist)) +
+  geom_point() +
+  geom_smooth(method=lm, col='blue')
+linplot
+```
+
+```{r 3.7 estimate of average reaction time}
+
+#As speed increases, thinking time increases
+#Thinking time is stopping distance (dist) - breaking distance
+#breaking distance is proportional to speed^2
+#Breaking distance is speed^2+interept
+#s=d/t
+#t=d/s
+thinking_time <- lm(speed^2)
+
+stopping_time <- cars$dist/cars$speed
+x <- cars$speed^2
+thinking <- lm(y~speed^2, cars)
+
+summary(thinking)
+
+
+thinkplot <- ggplot(data=cars, aes(x=speed, y=dist)) +
+  geom_point() +
+  geom_smooth(method=lm, formula=y~x^2, col='blue')
+thinkplot
+
+```
+
